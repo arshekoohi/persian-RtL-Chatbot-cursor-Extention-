@@ -1,0 +1,17 @@
+# Dependencies / build
+node_modules/
+*.vsix
+*.tgz
+.vscode/
+*.log
+
+# Local / machine-specific helpers
+apply-patch.js
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Backups Cursor may create when testing
+*.cursor-fa-rtl.bak

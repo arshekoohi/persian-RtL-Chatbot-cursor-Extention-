@@ -1,0 +1,68 @@
+{
+  "name": "cursor-fa-rtl",
+  "displayName": "Cursor FA RTL (Persian Chat)",
+  "description": "افزونهٔ سبک RTL برای چت Cursor — فارسی/عربی راست‌چین با حفظ LTR برای بلوک‌های کد",
+  "version": "1.0.2",
+  "publisher": "matinteb",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arshekoohi/persian-RtL-Chatbot-cursor-Extention-.git"
+  },
+  "bugs": {
+    "url": "https://github.com/arshekoohi/persian-RtL-Chatbot-cursor-Extention-/issues"
+  },
+  "homepage": "https://github.com/arshekoohi/persian-RtL-Chatbot-cursor-Extention-#readme",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["rtl", "persian", "farsi", "arabic", "cursor", "chat"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./src/extension.js",
+  "extensionKind": ["ui"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "cursorFaRtl.enable",
+        "title": "Cursor FA RTL: Enable (فعال‌سازی)"
+      },
+      {
+        "command": "cursorFaRtl.disable",
+        "title": "Cursor FA RTL: Disable (غیرفعال‌سازی)"
+      },
+      {
+        "command": "cursorFaRtl.status",
+        "title": "Cursor FA RTL: Status (وضعیت)"
+      },
+      {
+        "command": "cursorFaRtl.reapply",
+        "title": "Cursor FA RTL: Re-apply after Cursor update"
+      }
+    ],
+    "configuration": {
+      "title": "Cursor FA RTL",
+      "properties": {
+        "cursorFaRtl.autoEnable": {
+          "type": "boolean",
+          "default": true,
+          "description": "بعد از نصب، در استارت‌آپ اگر پچ فعال نبود خودکار فعال کند (نیاز به یک بار Enable دستی اول)."
+        },
+        "cursorFaRtl.mode": {
+          "type": "string",
+          "enum": ["auto", "always", "off"],
+          "default": "auto",
+          "description": "auto = فقط بلوک‌های فارسی/عربی RTL؛ always = همهٔ پیام‌های چت RTL؛ off = فقط اسکریپت تزریق شود بدون اعمال جهت."
+        },
+        "cursorFaRtl.vazirFont": {
+          "type": "boolean",
+          "default": true,
+          "description": "اعمال فونت وزیرمتن (Vazirmatn) روی پیام‌ها و ورودی فارسی چت. از دکمهٔ FA با Shift+راست‌کلیک هم قابل تغییر است."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "npx --yes @vscode/vsce package --allow-missing-repository"
+  }
+}
