@@ -18,7 +18,7 @@ Lightweight Cursor / VS Code extension that makes **Agent & Chat** feel natural 
 |--------|--------|
 | Auto RTL | Detects Persian / Arabic in chat & Composer messages |
 | Always / Off modes | Force all chat RTL, or disable direction only |
-| Vazirmatn font | Beautiful Persian typography via CDN (toggleable) |
+| Vazirmatn font | Bundled local `.woff2` (CSP-safe; no CDN) |
 | Code stays LTR | `pre` / `code` / Monaco blocks remain left-to-right |
 | Floating control | **FA RTL** button — toggle, mode cycle, font toggle |
 | Survives updates | Auto-heal + **Re-apply** after Cursor upgrades |
@@ -44,12 +44,12 @@ cd persian-RtL-Chatbot-cursor-Extention-
 npm run package
 ```
 
-This produces `cursor-fa-rtl-1.0.2.vsix`.
+This produces `cursor-fa-rtl-1.0.3.vsix`.
 
 ### 2. Install into Cursor
 
 ```bash
-cursor --install-extension cursor-fa-rtl-1.0.2.vsix
+cursor --install-extension cursor-fa-rtl-1.0.3.vsix
 ```
 
 Or: **Extensions** → `⋯` → **Install from VSIX…**
@@ -93,17 +93,18 @@ Open: **Cursor Settings** → search `Cursor FA RTL`.
 ┌─────────────────┐     Enable      ┌──────────────────────────┐
 │  Extension UI   │ ──────────────► │  workbench.html + inject │
 │  (commands)     │                 │  cursor-fa-rtl.js        │
+│                 │                 │  Vazirmatn-*.woff2       │
 └─────────────────┘                 └────────────┬─────────────┘
                                                  │
                                                  ▼
                                         Chat / Composer DOM
                                         • mark RTL blocks
-                                        • load Vazirmatn
+                                        • local @font-face
                                         • keep code LTR
 ```
 
-1. **Enable** copies `src/inject/cursor-fa-rtl.js` next to Cursor’s `workbench.html` and injects a `<script>` tag.
-2. The script watches chat DOM, detects Arabic-script text, sets `direction: rtl`, and applies Vazirmatn.
+1. **Enable** copies `src/inject/cursor-fa-rtl.js` and Vazirmatn `.woff2` files next to Cursor’s `workbench.html`, then injects `<script>` tags.
+2. The script watches chat DOM, detects Arabic-script text, sets `direction: rtl`, and applies local Vazirmatn via `@font-face` (Cursor CSP blocks remote stylesheets).
 3. Checksums in `product.json` are updated so Cursor is less likely to “repair” the file away.
 
 ---
@@ -126,7 +127,7 @@ Then uninstall the extension from the Extensions panel if desired.
 | Patch gone after Cursor update | Run **Re-apply**, then full restart |
 | “Installation appears to be corrupt” | Usually harmless; extension updates checksums |
 | Permission denied on Windows | Open Cursor **as Administrator**, then Enable |
-| Font not loading | Need network once (jsDelivr CDN); then cached |
+| Font still not Vazirmatn | Run **Re-apply** (must copy `.woff2` files); full restart |
 | Want system font only | Shift+right-click FA button, or set `vazirFont: false` |
 
 ---
@@ -134,12 +135,15 @@ Then uninstall the extension from the Extensions panel if desired.
 ## Project layout
 
 ```text
-├── package.json              # Extension manifest
+├── package.json
 ├── src/
-│   ├── extension.js          # Enable / disable / checksum helpers
+│   ├── extension.js
 │   └── inject/
-│       └── cursor-fa-rtl.js  # Runtime RTL + Vazirmatn in chat UI
-├── media/icon.svg
+│       └── cursor-fa-rtl.js
+├── media/
+│   ├── icon.svg
+│   └── fonts/
+│       └── Vazirmatn-*.woff2
 ├── LICENSE
 └── README.md
 ```
@@ -148,7 +152,7 @@ Then uninstall the extension from the Extensions panel if desired.
 
 ## Privacy & safety
 
-- No telemetry, no network calls from the extension host except the **optional** font CSS from jsDelivr when Vazir is on.
+- No telemetry. Fonts are **bundled locally** (no CDN at runtime).
 - Only touches Cursor’s local `workbench.html` (with backup `*.cursor-fa-rtl.bak`).
 - Always review the inject script before enabling on a locked-down machine.
 
@@ -170,7 +174,7 @@ Then uninstall the extension from the Extensions panel if desired.
 git clone https://github.com/arshekoohi/persian-RtL-Chatbot-cursor-Extention-.git
 cd persian-RtL-Chatbot-cursor-Extention-
 npm run package
-cursor --install-extension cursor-fa-rtl-1.0.2.vsix
+cursor --install-extension cursor-fa-rtl-1.0.3.vsix
 ```
 
 1. `Ctrl+Shift+P` → **Cursor FA RTL: Enable**
@@ -179,7 +183,7 @@ cursor --install-extension cursor-fa-rtl-1.0.2.vsix
 ## امکانات
 
 - تشخیص خودکار فارسی/عربی در پیام‌ها و Composer  
-- فونت وزیرمتن (قابل خاموش‌کردن)  
+- فونت وزیرمتن **لوکال** (بدون CDN؛ سازگار با CSP کرسر)  
 - بلوک‌های کد همیشه LTR  
 - دکمهٔ شناور **FA RTL**  
 - بازیابی خودکار / دستور **Re-apply** بعد از آپدیت Cursor  
@@ -202,9 +206,9 @@ cursor --install-extension cursor-fa-rtl-1.0.2.vsix
 
 - دکمه دیده نمی‌شود → Restart کامل Cursor  
 - بعد از آپدیت Cursor خراب شد → **Re-apply**  
+- فونت وزیر نیامد → **Re-apply** (باید فایل‌های `.woff2` کپی شوند) + Restart کامل  
 - خطای corrupt → معمولاً بی‌ضرر است  
 - خطای نوشتن در Windows → اجرای Cursor با **Run as administrator**  
-- فونت نیامد → یک‌بار اینترنت برای CDN  
 
 ## مجوز
 

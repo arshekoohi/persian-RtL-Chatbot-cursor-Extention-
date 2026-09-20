@@ -5,8 +5,15 @@ const crypto = require('crypto');
 const MARK_START = '<!-- CURSOR-FA-RTL-START -->';
 const MARK_END = '<!-- CURSOR-FA-RTL-END -->';
 const SCRIPT_NAME = 'cursor-fa-rtl.js';
+const CONFIG_NAME = 'cursor-fa-rtl-config.js';
 const BACKUP_SUFFIX = '.cursor-fa-rtl.bak';
 const CHECKSUM_KEY = 'vs/code/electron-sandbox/workbench/workbench.html';
+const FONT_FILES = [
+  'Vazirmatn-Regular.woff2',
+  'Vazirmatn-Medium.woff2',
+  'Vazirmatn-SemiBold.woff2',
+  'Vazirmatn-Bold.woff2',
+];
 
 /**
  * @param {import('vscode').ExtensionContext} context
@@ -133,7 +140,9 @@ async function enable(context, vscode) {
   const { htmlPath } = resolveWorkbench(vscode);
   const dir = path.dirname(htmlPath);
   const scriptDest = path.join(dir, SCRIPT_NAME);
+  const configDest = path.join(dir, CONFIG_NAME);
   const scriptSrc = path.join(context.extensionPath, 'src', 'inject', SCRIPT_NAME);
+  const fontsSrc = path.join(context.extensionPath, 'media', 'fonts');
 
   if (!fs.existsSync(scriptSrc)) {
     throw new Error(`فایل inject پیدا نشد: ${scriptSrc}`);
@@ -149,14 +158,29 @@ async function enable(context, vscode) {
 
   fs.copyFileSync(scriptSrc, scriptDest);
 
+  // Local fonts — CSP blocks remote stylesheets (style-src has no https:)
+  for (const name of FONT_FILES) {
+    const from = path.join(fontsSrc, name);
+    if (!fs.existsSync(from)) {
+      throw new Error(`فونت پیدا نشد: ${from}`);
+    }
+    fs.copyFileSync(from, path.join(dir, name));
+  }
+
+  const vazirOn = vscode.workspace.getConfiguration('cursorFaRtl').get('vazirFont', true);
+  // External config file (inline <script> is blocked by CSP script-src)
+  fs.writeFileSync(
+    configDest,
+    `try{localStorage.setItem('cursorFaRtl.vazir','${vazirOn ? '1' : '0'}')}catch(e){}\n`,
+    'utf8',
+  );
+
   let html = fs.readFileSync(htmlPath, 'utf8');
   html = stripPatch(html);
 
-  const vazirOn = vscode.workspace.getConfiguration('cursorFaRtl').get('vazirFont', true);
-  const boot = `<script>try{localStorage.setItem('cursorFaRtl.vazir','${vazirOn ? '1' : '0'}')}catch(e){}</script>`;
   const injection = [
     MARK_START,
-    boot,
+    `<script src="./${CONFIG_NAME}"></script>`,
     `<script src="./${SCRIPT_NAME}"></script>`,
     MARK_END,
   ].join('\n\t');
@@ -179,6 +203,7 @@ async function disable(vscode) {
   const { htmlPath } = resolveWorkbench(vscode);
   const dir = path.dirname(htmlPath);
   const scriptDest = path.join(dir, SCRIPT_NAME);
+  const configDest = path.join(dir, CONFIG_NAME);
   const backup = htmlPath + BACKUP_SUFFIX;
 
   ensureWritable(htmlPath);
@@ -194,10 +219,12 @@ async function disable(vscode) {
     fs.writeFileSync(htmlPath, html, 'utf8');
   }
 
-  if (fs.existsSync(scriptDest)) {
-    try {
-      fs.unlinkSync(scriptDest);
-    } catch (_) {}
+  for (const file of [scriptDest, configDest, ...FONT_FILES.map((f) => path.join(dir, f))]) {
+    if (fs.existsSync(file)) {
+      try {
+        fs.unlinkSync(file);
+      } catch (_) {}
+    }
   }
 
   fixChecksums(htmlPath, vscode);

@@ -6,15 +6,19 @@
   'use strict';
 
   const STYLE_ID = 'cursor-fa-rtl-style';
-  const FONT_LINK_ID = 'cursor-fa-rtl-font';
   const BTN_ID = 'cursor-fa-rtl-toggle';
   const STORAGE_KEY = 'cursorFaRtl.enabled';
   const MODE_KEY = 'cursorFaRtl.mode'; // auto | always | off
   const FONT_KEY = 'cursorFaRtl.vazir'; // '1' | '0'
   const MARK = 'data-fa-rtl';
   const FONT_STACK = '"Vazirmatn", "Vazir", Tahoma, "Segoe UI", sans-serif';
-  const FONT_CSS =
-    'https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css';
+  // Local woff2 files are copied next to this script on Enable (CSP blocks remote CSS).
+  const FONT_FILES = [
+    { file: 'Vazirmatn-Regular.woff2', weight: 400 },
+    { file: 'Vazirmatn-Medium.woff2', weight: 500 },
+    { file: 'Vazirmatn-SemiBold.woff2', weight: 600 },
+    { file: 'Vazirmatn-Bold.woff2', weight: 700 },
+  ];
 
   const RTL_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
   const LTR_LETTER_RE = /[A-Za-z]/;
@@ -41,28 +45,34 @@
     }
   }
 
-  function ensureFont() {
-    if (!useVazirFont()) {
-      const existing = document.getElementById(FONT_LINK_ID);
-      if (existing) existing.remove();
-      document.documentElement.removeAttribute('data-fa-vazir');
-      return;
-    }
-    document.documentElement.setAttribute('data-fa-vazir', '1');
-    if (document.getElementById(FONT_LINK_ID)) return;
-    const link = document.createElement('link');
-    link.id = FONT_LINK_ID;
-    link.rel = 'stylesheet';
-    link.href = FONT_CSS;
-    document.documentElement.appendChild(link);
+  function fontFaceCss() {
+    return FONT_FILES.map(
+      (f) => `
+      @font-face {
+        font-family: "Vazirmatn";
+        src: url("./${f.file}") format("woff2");
+        font-weight: ${f.weight};
+        font-style: normal;
+        font-display: swap;
+      }`,
+    ).join('\n');
   }
 
   function ensureStyle() {
-    ensureFont();
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
+    const vazir = useVazirFont();
+    if (vazir) document.documentElement.setAttribute('data-fa-vazir', '1');
+    else document.documentElement.removeAttribute('data-fa-vazir');
+
+    let style = document.getElementById(STYLE_ID);
+    if (!style) {
+      style = document.createElement('style');
+      style.id = STYLE_ID;
+      document.documentElement.appendChild(style);
+    }
+
     style.textContent = `
+      ${vazir ? fontFaceCss() : ''}
+
       /* Toggle FAB */
       #${BTN_ID} {
         position: fixed;
@@ -85,34 +95,29 @@
       #${BTN_ID}:hover { opacity: 1; filter: brightness(1.08); }
       #${BTN_ID}[data-on="1"] { background: #1f4a42; color: #7dd3c0; border-color: #7dd3c0; }
 
-      /* Applied RTL blocks + Vazirmatn */
+      /* Applied RTL blocks */
       [${MARK}="rtl"] {
         direction: rtl !important;
         text-align: right !important;
         unicode-bidi: plaintext;
       }
+
+      /* Vazirmatn on all text inside RTL chat (CSP-safe local @font-face) */
       html[data-fa-vazir="1"] [${MARK}="rtl"],
-      html[data-fa-vazir="1"] [${MARK}="rtl"] p,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] li,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] span,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] h1,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] h2,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] h3,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] h4,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] strong,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] em,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] a,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] blockquote,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] td,
-      html[data-fa-vazir="1"] [${MARK}="rtl"] th {
+      html[data-fa-vazir="1"] [${MARK}="rtl"] *:not(pre):not(code):not(kbd):not(samp):not(.monaco-editor):not([class*="codeblock"]):not([class*="CodeBlock"]) {
         font-family: ${FONT_STACK} !important;
       }
+
       [${MARK}="rtl"] pre,
       [${MARK}="rtl"] code,
+      [${MARK}="rtl"] kbd,
+      [${MARK}="rtl"] samp,
       [${MARK}="rtl"] .monaco-editor,
       [${MARK}="rtl"] [class*="codeblock"],
       [${MARK}="rtl"] [class*="CodeBlock"],
-      [${MARK}="rtl"] .anysphere-markdown-container-root pre {
+      [${MARK}="rtl"] .anysphere-markdown-container-root pre,
+      [${MARK}="rtl"] pre *,
+      [${MARK}="rtl"] code * {
         direction: ltr !important;
         text-align: left !important;
         unicode-bidi: isolate;
@@ -128,11 +133,11 @@
       }
       html[data-fa-vazir="1"] .composer-input [${MARK}="rtl"],
       html[data-fa-vazir="1"] .aislash-editor-input[${MARK}="rtl"],
-      html[data-fa-vazir="1"] div[contenteditable="true"][${MARK}="rtl"] {
+      html[data-fa-vazir="1"] div[contenteditable="true"][${MARK}="rtl"],
+      html[data-fa-vazir="1"] div[contenteditable="true"][${MARK}="rtl"] * {
         font-family: ${FONT_STACK} !important;
       }
     `;
-    document.documentElement.appendChild(style);
   }
 
   function getMode() {
@@ -265,7 +270,7 @@
         try {
           localStorage.setItem(FONT_KEY, next);
         } catch (_) {}
-        ensureFont();
+        ensureStyle();
         btn.title = `Cursor FA RTL — فونت وزیر: ${next === '1' ? 'روشن' : 'خاموش'}`;
         return;
       }
